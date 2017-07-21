@@ -31,7 +31,7 @@ function initDemo()
 	'use strict';
 	console.log("Webgl init");
 
-	let canvas = document.getElementById("panoCanvas");
+	let canvas = document.getElementById("2dCanvas");
 	let gl = canvas.getContext("webgl");
 	// promote to global for debugging etc.
 	window.canvas = canvas;
