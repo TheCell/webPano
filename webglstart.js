@@ -7,10 +7,14 @@ var vertexShaderText =
 	'attribute vec4 vertexColor;',
 	'varying vec4 fragColor;',
 	'',
+	'uniform mat4 mWorld;',
+	'uniform mat4 mView;',
+	'uniform mat4 mProjection;',
+	'',
 	'void main()',
 	'{',
 	'	fragColor = vertexColor;',
-	'	gl_Position = vec4(vertexPosition, 1.0);',
+	'	gl_Position = mProjection * mView * mWorld * vec4(vertexPosition, 1.0);',
 	'}'
 ].join('\n');
 
@@ -116,11 +120,14 @@ function setupShaders()
 
 function setupBuffers(program)
 {
+	'use strict';
+	let gl = window.gl;
+
 	let triangleVertices =
 	[ // X, Y, Z,			R, G, B, A
-		0.0, 0.5, 1.0,		1.0, 0.3, 0.5, 1.0,
-		0.5, -0.5, 1.0,		1.0, 1.0, 0.5, 1.0,
-		-0.5, -0.5, 1.0,	0.0, 0.0, 0.5, 1.0
+		0.0, 0.5, 0.0,		1.0, 0.3, 0.5, 1.0,
+		0.5, -0.5, 0.0,		1.0, 1.0, 0.5, 1.0,
+		-0.5, -0.5, 0.0,	0.0, 0.0, 0.5, 1.0
 	];
 
 	// setup buffer and feed Data
@@ -155,8 +162,53 @@ function setupBuffers(program)
 	gl.enableVertexAttribArray(positionAttributeLocation);
 	gl.enableVertexAttribArray(colorAttributeLocation);
 
-	// Main render loop here
+	// Tell OpenGL state machine which program should be active
 	gl.useProgram(program);
+
+	// link variables to vertex Shader
+	let matWorldUniformLocation = gl.getUniformLocation(program, "mWorld");
+	let matViewUniformLocation = gl.getUniformLocation(program, "mView");
+	let matProjectionUniformLocation = gl.getUniformLocation(program, "mProjection");
+
+	// setup matrices
+	let worldMatrix = new Float32Array(16); // 4x4 Matrix
+	let viewMatrix = new Float32Array(16); // 4x4 Matrix
+	let projectionMatrix = new Float32Array(16); // 4x4 Matrix
+
+	// init matrices
+	mat4.identity(worldMatrix);
+	// output matrix, eye coordinate, center coordinate, up vector
+	mat4.lookAt(viewMatrix, [0, 0, -2], [0, 0, 0], [0, 1, 0]);
+	// output matrix, field of view, apsect ratio, near clipping, far clipping
+	mat4.perspective(projectionMatrix, glMatrix.toRadian(45), canvas.width / canvas.height, 0.1, 1000.0);
+
+	// setup matrices for world and camera transformations
+	gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
+	gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
+	gl.uniformMatrix4fv(matProjectionUniformLocation, gl.FALSE, projectionMatrix);
+
+	// Main render loop here
 	// how to interpret for drawing, how many skips, how many vertex
-	gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+	let identityMatrix = new Float32Array(16); // 4x4 Matrix
+	mat4.identity(identityMatrix); // init with identity
+	let angle = 0;
+
+	let loop = function ()
+	{
+		// rotate every 6 seconds;
+		// performance.now The returned value represents the time elapsed since the time origin
+		angle = performance.now() / 1000 / 6*(2*Math.PI);
+		mat4.rotate(worldMatrix, identityMatrix, angle, [0, 1, 0]);
+		gl.uniformMatrix4fv(matWorldUniformLocation, gl.False, worldMatrix);
+
+		gl.clearColor(0.75, 0.85, 0.8, 1.0);
+		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
+		gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+		// wait for browser to give next go at drawing
+		requestAnimationFrame(loop);
+	};
+
+	requestAnimationFrame(loop);
 }
