@@ -56,6 +56,12 @@ function initDemo()
 	// setup basic background
 	gl.clearColor(0.8, 0.8, 0.8, 1.0);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	// enable culling and set counter clock wise
+	gl.enable(gl.CULL_FACE);
+	gl.frontFace(gl.CCW);
+	gl.cullFace(gl.BACK);
+	// check every pixel if it is in front of last drawn before draw
+	gl.enable(gl.DEPTH_TEST);
 
 	setupShaders();
 }
@@ -88,12 +94,6 @@ function setupShaders()
 		return;
 	}
 
-	/*
-	gl.shaderSource(vertexShader, "vertexshader.glsl");
-
-	gl.shaderSource(fragmentShader, "fragmentshader.glsl");
-	*/
-
 	// program is kinda like the whole pipeline
 	let program = gl.createProgram();
 	gl.attachShader(program, vertexShader);
@@ -123,17 +123,97 @@ function setupBuffers(program)
 	'use strict';
 	let gl = window.gl;
 
-	let triangleVertices =
+	let cubeVertices =
 	[ // X, Y, Z,			R, G, B, A
-		0.0, 0.5, 0.0,		1.0, 0.3, 0.5, 1.0,
-		0.5, -0.5, 0.0,		1.0, 1.0, 0.5, 1.0,
-		-0.5, -0.5, 0.0,	0.0, 0.0, 0.5, 1.0
+		// FRONT
+		// front top left
+		-1.0, 1.0, 1.0,		1.0, 0.3, 0.5, 1.0,
+		// front bottom right
+		1.0, -1.0, 1.0,		1.0, 0.3, 0.5, 1.0,
+		// front top right
+		1.0, 1.0, 1.0,		1.0, 0.3, 0.5, 1.0,
+		// front top left
+		-1.0, 1.0, 1.0,		1.0, 0.3, 0.5, 1.0,
+		// front bottom left
+		-1.0, -1.0, 1.0,	1.0, 0.3, 0.5, 1.0,
+		// front bottom right
+		1.0, -1.0, 1.0,		1.0, 0.3, 0.5, 1.0,
+
+		// RIGHT
+		// front top right
+		1.0, 1.0, 1.0,		1.0, 1.0, 0.5, 1.0,
+		// back bottom right
+		1.0, -1.0, -1.0,	1.0, 1.0, 0.5, 1.0,
+		// back top right
+		1.0, 1.0, -1.0,		1.0, 1.0, 0.5, 1.0,
+		// front top right
+		1.0, 1.0, 1.0,		1.0, 1.0, 0.5, 1.0,
+		// front bottom right
+		1.0, -1.0, 1.0,		1.0, 1.0, 0.5, 1.0,
+		// back bottom right
+		1.0, -1.0, -1.0,	1.0, 1.0, 0.5, 1.0,
+
+		// LEFT
+		// front top left
+		-1.0, 1.0, 1.0,		1.0, 0.7, 0.5, 1.0,
+		// back top left
+		-1.0, 1.0, -1.0,	1.0, 0.7, 0.5, 1.0,
+		// back bottom left
+		-1.0, -1.0, -1.0,	1.0, 0.7, 0.5, 1.0,
+		// front top left
+		-1.0, 1.0, 1.0,		1.0, 0.7, 0.5, 1.0,
+		// back bottom left
+		-1.0, -1.0, -1.0,	1.0, 0.7, 0.5, 1.0,
+		// front bottom left
+		-1.0, -1.0, 1.0,	1.0, 0.7, 0.5, 1.0,
+
+		// BACK
+		// back top left
+		-1.0, 1.0, -1.0,	0.3, 1.0, 0.5, 1.0,
+		// back bottom right
+		1.0, -1.0, -1.0,	0.3, 1.0, 0.5, 1.0,
+		// back bottom left
+		-1.0, -1.0, -1.0,	0.3, 1.0, 0.5, 1.0,
+		// back top left
+		-1.0, 1.0, -1.0,	0.3, 1.0, 0.5, 1.0,
+		// back top right
+		1.0, 1.0, -1.0,		0.3, 1.0, 0.5, 1.0,
+		// back bottom right
+		1.0, -1.0, -1.0,	0.3, 1.0, 0.5, 1.0,
+
+		// TOP
+		// front top left
+		-1.0, 1.0, 1.0,		0.8, 1.0, 0.5, 1.0,
+		// back top right
+		1.0, 1.0, -1.0,		0.8, 1.0, 0.5, 1.0,
+		// back top left
+		-1.0, 1.0, -1.0,	0.8, 1.0, 0.5, 1.0,
+		// front top left
+		-1.0, 1.0, 1.0,		0.8, 1.0, 0.5, 1.0,
+		// front top right
+		1.0, 1.0, 1.0,		0.8, 1.0, 0.5, 1.0,
+		// back top right
+		1.0, 1.0, -1.0,		0.8, 1.0, 0.5, 1.0,
+		
+		// BOTTOM
+		// front bottom right
+		1.0, -1.0, 1.0,		1.0, 0.3, 0.9, 1.0,
+		// front bottom left
+		-1.0, -1.0, 1.0,	1.0, 0.3, 0.9, 1.0,
+		// back bottom left
+		-1.0, -1.0, -1.0,	1.0, 0.3, 0.9, 1.0,
+		// front bottom right
+		1.0, -1.0, 1.0,		1.0, 0.3, 0.9, 1.0,
+		// back bottom left
+		-1.0, -1.0, -1.0,	1.0, 0.3, 0.9, 1.0,
+		// back bottom right
+		1.0, -1.0, -1.0,	1.0, 0.3, 0.9, 1.0
 	];
 
 	// setup buffer and feed Data
 	let triangleVertexBufferObject = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexBufferObject);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangleVertices), gl.STATIC_DRAW);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(cubeVertices), gl.STATIC_DRAW);
 
 	// link ShaderAttribute to Javascript and set how to read bytes
 	let positionAttributeLocation = gl.getAttribLocation(program, 'vertexPosition');
@@ -178,7 +258,7 @@ function setupBuffers(program)
 	// init matrices
 	mat4.identity(worldMatrix);
 	// output matrix, eye coordinate, center coordinate, up vector
-	mat4.lookAt(viewMatrix, [0, 0, -2], [0, 0, 0], [0, 1, 0]);
+	mat4.lookAt(viewMatrix, [0, 2, 5], [0, 0, 0], [0, 1, 0]);
 	// output matrix, field of view, apsect ratio, near clipping, far clipping
 	mat4.perspective(projectionMatrix, glMatrix.toRadian(45), canvas.width / canvas.height, 0.1, 1000.0);
 
@@ -191,6 +271,9 @@ function setupBuffers(program)
 	// how to interpret for drawing, how many skips, how many vertex
 
 	let identityMatrix = new Float32Array(16); // 4x4 Matrix
+	let xRotationMatrix = new Float32Array(16); // 4x4 Matrix
+	let yRotationMatrix = new Float32Array(16); // 4x4 Matrix
+	
 	mat4.identity(identityMatrix); // init with identity
 	let angle = 0;
 
@@ -199,12 +282,17 @@ function setupBuffers(program)
 		// rotate every 6 seconds;
 		// performance.now The returned value represents the time elapsed since the time origin
 		angle = performance.now() / 1000 / 6*(2*Math.PI);
-		mat4.rotate(worldMatrix, identityMatrix, angle, [0, 1, 0]);
+		mat4.rotate(yRotationMatrix, identityMatrix, angle, [0, 1, 0]);
+		mat4.rotate(xRotationMatrix, identityMatrix, angle / 4, [1, 0, 0]);
+		//mat4.rotate(worldMatrix, identityMatrix, angle, [0, 1, 0]);
+		// multiply the matrices for rotations into the worldmatrix
+		mat4.mul(worldMatrix, yRotationMatrix, xRotationMatrix);
 		gl.uniformMatrix4fv(matWorldUniformLocation, gl.False, worldMatrix);
 
 		gl.clearColor(0.75, 0.85, 0.8, 1.0);
+		// tell gl which buffers to clear
 		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-		gl.drawArrays(gl.TRIANGLES, 0, 3);
+		gl.drawArrays(gl.TRIANGLES, 0, cubeVertices.length / 7);
 
 		// wait for browser to give next go at drawing
 		requestAnimationFrame(loop);
