@@ -4,8 +4,8 @@ var vertexShaderText =
 	'precision mediump float;',
 	'',
 	'attribute vec3 vertexPosition;',
-	'attribute vec4 vertexColor;',
-	'varying vec4 fragColor;',
+	'attribute vec2 vertTexCoord;',
+	'varying vec2 fragTexCoord;',
 	'',
 	'uniform mat4 mWorld;',
 	'uniform mat4 mView;',
@@ -13,7 +13,7 @@ var vertexShaderText =
 	'',
 	'void main()',
 	'{',
-	'	fragColor = vertexColor;',
+	'	fragTexCoord = vertTexCoord;',
 	'	gl_Position = mProjection * mView * mWorld * vec4(vertexPosition, 1.0);',
 	'}'
 ].join('\n');
@@ -22,11 +22,12 @@ var fragmentShaderText =
 [
 	'precision mediump float;',
 	'',
-	'varying vec4 fragColor;',
+	'varying vec2 fragTexCoord;',
+	'uniform sampler2D sampler;',
 	'',
 	'void main()',
 	'{',
-	'	gl_FragColor = fragColor;',
+	'	gl_FragColor = texture2D(sampler, fragTexCoord);',
 	'}'
 ].join('\n');
 
@@ -124,90 +125,90 @@ function setupBuffers(program)
 	let gl = window.gl;
 
 	let cubeVertices =
-	[ // X, Y, Z,			R, G, B, A
+	[ // X, Y, Z,			U, V
 		// FRONT
 		// front top left
-		-1.0, 1.0, 1.0,		1.0, 0.3, 0.5, 1.0,
+		-1.0, 1.0, 1.0,		0, 0,
 		// front bottom right
-		1.0, -1.0, 1.0,		1.0, 0.3, 0.5, 1.0,
+		1.0, -1.0, 1.0,		1, 1,
 		// front top right
-		1.0, 1.0, 1.0,		1.0, 0.3, 0.5, 1.0,
+		1.0, 1.0, 1.0,		1, 0,
 		// front top left
-		-1.0, 1.0, 1.0,		1.0, 0.3, 0.5, 1.0,
+		-1.0, 1.0, 1.0,		0, 0,
 		// front bottom left
-		-1.0, -1.0, 1.0,	1.0, 0.3, 0.5, 1.0,
+		-1.0, -1.0, 1.0,	0, 1,
 		// front bottom right
-		1.0, -1.0, 1.0,		1.0, 0.3, 0.5, 1.0,
+		1.0, -1.0, 1.0,		1, 1,
 
 		// RIGHT
 		// front top right
-		1.0, 1.0, 1.0,		1.0, 1.0, 0.5, 1.0,
+		1.0, 1.0, 1.0,		0, 1,
 		// back bottom right
-		1.0, -1.0, -1.0,	1.0, 1.0, 0.5, 1.0,
+		1.0, -1.0, -1.0,	1, 0,
 		// back top right
-		1.0, 1.0, -1.0,		1.0, 1.0, 0.5, 1.0,
+		1.0, 1.0, -1.0,		1, 1,
 		// front top right
-		1.0, 1.0, 1.0,		1.0, 1.0, 0.5, 1.0,
+		1.0, 1.0, 1.0,		0, 1,
 		// front bottom right
-		1.0, -1.0, 1.0,		1.0, 1.0, 0.5, 1.0,
+		1.0, -1.0, 1.0,		0, 0,
 		// back bottom right
-		1.0, -1.0, -1.0,	1.0, 1.0, 0.5, 1.0,
+		1.0, -1.0, -1.0,	1, 0,
 
 		// LEFT
 		// front top left
-		-1.0, 1.0, 1.0,		1.0, 0.7, 0.5, 1.0,
+		-1.0, 1.0, 1.0,		1, 1,
 		// back top left
-		-1.0, 1.0, -1.0,	1.0, 0.7, 0.5, 1.0,
+		-1.0, 1.0, -1.0,	0, 1,
 		// back bottom left
-		-1.0, -1.0, -1.0,	1.0, 0.7, 0.5, 1.0,
+		-1.0, -1.0, -1.0,	0, 0,
 		// front top left
-		-1.0, 1.0, 1.0,		1.0, 0.7, 0.5, 1.0,
+		-1.0, 1.0, 1.0,		1, 1,
 		// back bottom left
-		-1.0, -1.0, -1.0,	1.0, 0.7, 0.5, 1.0,
+		-1.0, -1.0, -1.0,	0, 0,
 		// front bottom left
-		-1.0, -1.0, 1.0,	1.0, 0.7, 0.5, 1.0,
+		-1.0, -1.0, 1.0,	1, 0,
 
 		// BACK
 		// back top left
-		-1.0, 1.0, -1.0,	0.3, 1.0, 0.5, 1.0,
+		-1.0, 1.0, -1.0,	1, 1,
 		// back bottom right
-		1.0, -1.0, -1.0,	0.3, 1.0, 0.5, 1.0,
+		1.0, -1.0, -1.0,	0, 0,
 		// back bottom left
-		-1.0, -1.0, -1.0,	0.3, 1.0, 0.5, 1.0,
+		-1.0, -1.0, -1.0,	1, 0,
 		// back top left
-		-1.0, 1.0, -1.0,	0.3, 1.0, 0.5, 1.0,
+		-1.0, 1.0, -1.0,	1, 1,
 		// back top right
-		1.0, 1.0, -1.0,		0.3, 1.0, 0.5, 1.0,
+		1.0, 1.0, -1.0,		0, 1,
 		// back bottom right
-		1.0, -1.0, -1.0,	0.3, 1.0, 0.5, 1.0,
+		1.0, -1.0, -1.0,	0, 0,
 
 		// TOP
 		// front top left
-		-1.0, 1.0, 1.0,		0.8, 1.0, 0.5, 1.0,
+		-1.0, 1.0, 1.0,		0, 0,
 		// back top right
-		1.0, 1.0, -1.0,		0.8, 1.0, 0.5, 1.0,
+		1.0, 1.0, -1.0,		1, 1,
 		// back top left
-		-1.0, 1.0, -1.0,	0.8, 1.0, 0.5, 1.0,
+		-1.0, 1.0, -1.0,	0, 1,
 		// front top left
-		-1.0, 1.0, 1.0,		0.8, 1.0, 0.5, 1.0,
+		-1.0, 1.0, 1.0,		0, 0,
 		// front top right
-		1.0, 1.0, 1.0,		0.8, 1.0, 0.5, 1.0,
+		1.0, 1.0, 1.0,		1, 0,
 		// back top right
-		1.0, 1.0, -1.0,		0.8, 1.0, 0.5, 1.0,
-		
+		1.0, 1.0, -1.0,		1, 1,
+
 		// BOTTOM
 		// front bottom right
-		1.0, -1.0, 1.0,		1.0, 0.3, 0.9, 1.0,
+		1.0, -1.0, 1.0,		1, 0,
 		// front bottom left
-		-1.0, -1.0, 1.0,	1.0, 0.3, 0.9, 1.0,
+		-1.0, -1.0, 1.0,	0, 0,
 		// back bottom left
-		-1.0, -1.0, -1.0,	1.0, 0.3, 0.9, 1.0,
+		-1.0, -1.0, -1.0,	0, 1,
 		// front bottom right
-		1.0, -1.0, 1.0,		1.0, 0.3, 0.9, 1.0,
+		1.0, -1.0, 1.0,		1, 0,
 		// back bottom left
-		-1.0, -1.0, -1.0,	1.0, 0.3, 0.9, 1.0,
+		-1.0, -1.0, -1.0,	0, 1,
 		// back bottom right
-		1.0, -1.0, -1.0,	1.0, 0.3, 0.9, 1.0
+		1.0, -1.0, -1.0,	1, 1
 	];
 
 	// setup buffer and feed Data
@@ -217,7 +218,7 @@ function setupBuffers(program)
 
 	// link ShaderAttribute to Javascript and set how to read bytes
 	let positionAttributeLocation = gl.getAttribLocation(program, 'vertexPosition');
-	let colorAttributeLocation = gl.getAttribLocation(program, 'vertexColor');
+	let texCoordAttribLocation = gl.getAttribLocation(program, 'vertTexCoord');
 
 	// points
 	gl.vertexAttribPointer(
@@ -225,22 +226,35 @@ function setupBuffers(program)
 		3, // Number of elements per Vertex
 		gl.FLOAT, // Type of Elements
 		gl.FALSE,
-		7 * Float32Array.BYTES_PER_ELEMENT, // Size of an indivitual Vertex
+		5 * Float32Array.BYTES_PER_ELEMENT, // Size of an indivitual Vertex
 		0 // Offset from the beginning of a single vertex to this attribute
 	);
 
-	// color
+	// texture
 	gl.vertexAttribPointer(
-		colorAttributeLocation, // color location
-		4, // Number of elements per color
+		texCoordAttribLocation, // texture location
+		2, // Number of elements per texture
 		gl.FLOAT, // Type of Elements
 		gl.FALSE,
-		7 * Float32Array.BYTES_PER_ELEMENT, // Size of an indivitual Vertex
+		5 * Float32Array.BYTES_PER_ELEMENT, // Size of an indivitual Vertex
 		3 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
 	);
 
 	gl.enableVertexAttribArray(positionAttributeLocation);
-	gl.enableVertexAttribArray(colorAttributeLocation);
+	gl.enableVertexAttribArray(texCoordAttribLocation);
+
+	// Create texture
+	var boxTexture = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, boxTexture);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE),
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE),
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+	gl.texImage2D(
+		gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,
+		gl.UNSIGNED_BYTE,
+		document.getElementById("crateImage"));
+	gl.bindTexture(gl.TEXTURE_2D, null);
 
 	// Tell OpenGL state machine which program should be active
 	gl.useProgram(program);
@@ -273,7 +287,7 @@ function setupBuffers(program)
 	let identityMatrix = new Float32Array(16); // 4x4 Matrix
 	let xRotationMatrix = new Float32Array(16); // 4x4 Matrix
 	let yRotationMatrix = new Float32Array(16); // 4x4 Matrix
-	
+
 	mat4.identity(identityMatrix); // init with identity
 	let angle = 0;
 
@@ -292,7 +306,11 @@ function setupBuffers(program)
 		gl.clearColor(0.75, 0.85, 0.8, 1.0);
 		// tell gl which buffers to clear
 		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-		gl.drawArrays(gl.TRIANGLES, 0, cubeVertices.length / 7);
+
+		gl.bindTexture(gl.TEXTURE_2D, boxTexture);
+		gl.activeTexture(gl.TEXTURE0);
+
+		gl.drawArrays(gl.TRIANGLES, 0, cubeVertices.length / 5);
 
 		// wait for browser to give next go at drawing
 		requestAnimationFrame(loop);
